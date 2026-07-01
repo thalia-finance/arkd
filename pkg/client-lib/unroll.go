@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -26,6 +27,15 @@ import (
 )
 
 var ErrWaitingForConfirmation = fmt.Errorf("waiting for confirmation(s), please retry later")
+
+// ErrInsufficientOnchainFunds is returned when the wallet has no (or not
+// enough) spendable onchain funds to pay the fees required to bump a
+// unilateral exit's tree transactions. Bumping the anchor outputs is a
+// hard requirement for a unilateral exit, so callers should surface this
+// clearly rather than treat it as a transient error to retry. A future
+// fee-sponsoring flow (paying the exit fees from another account) can key
+// off this sentinel with errors.Is.
+var ErrInsufficientOnchainFunds = errors.New("insufficient onchain funds to pay unilateral exit fees")
 
 func (a *service) Unroll(ctx context.Context, opts ...UnrollOption) ([]UnrollRes, error) {
 	if err := a.safeCheck(); err != nil {
@@ -242,6 +252,7 @@ func (a *service) bumpAnchorTx(ctx context.Context, parent *wire.MsgTx) (string,
 	selectedAmount := uint64(0)
 	amountToSelect := int64(fees) - txutils.ANCHOR_VALUE
 	keys := make(map[string]string)
+selection:
 	for _, addr := range addresses {
 		utxos, err := a.explorer.GetUtxos([]string{addr.Address})
 		if err != nil {
@@ -255,16 +266,33 @@ func (a *service) bumpAnchorTx(ctx context.Context, parent *wire.MsgTx) (string,
 		for _, utxo := range utxos {
 			selectedCoins = append(selectedCoins, utxo)
 			selectedAmount += utxo.Amount
-			amountToSelect -= int64(selectedAmount)
+			// Subtract this UTXO's own amount, not the running total:
+			// selectedAmount already accumulates, so subtracting it
+			// here double-counted and stopped selection early (and
+			// could underflow the change computation below). Break out
+			// of both loops once we've covered the fee so we don't
+			// over-select an extra input per remaining address.
+			amountToSelect -= int64(utxo.Amount)
 			keys[hex.EncodeToString(script)] = addr.KeyID
 			if amountToSelect <= 0 {
-				break
+				break selection
 			}
 		}
 	}
 
 	if amountToSelect > 0 {
-		return "", "", fmt.Errorf("not enough funds to select %d", amountToSelect)
+		// A unilateral exit can't proceed without onchain funds to bump
+		// its tree; distinguish "nothing at all" from "not quite enough"
+		// so the caller (and eventually a fee sponsor) can react.
+		if selectedAmount == 0 {
+			return "", "", fmt.Errorf(
+				"%w: none available", ErrInsufficientOnchainFunds,
+			)
+		}
+		return "", "", fmt.Errorf(
+			"%w: need %d more sat", ErrInsufficientOnchainFunds,
+			amountToSelect,
+		)
 	}
 
 	changeAmount := selectedAmount - fees
