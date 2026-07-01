@@ -208,8 +208,9 @@ func (a *service) Balance(ctx context.Context) (*Balance, error) {
 
 	return &Balance{
 		OnchainBalance: OnchainBalance{
-			SpendableAmount: onchainSpendable + boardingSpendable + redeemSpendable,
-			LockedAmount:    lockedOnchainBalance,
+			SpendableAmount:       onchainSpendable + boardingSpendable + redeemSpendable,
+			SpendableRedeemAmount: redeemSpendable,
+			LockedAmount:          lockedOnchainBalance,
 		},
 		OffchainBalance: OffchainBalance{
 			Total:          offchainBalance,

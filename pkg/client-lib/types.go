@@ -9,8 +9,15 @@ type Balance struct {
 }
 
 type OnchainBalance struct {
-	SpendableAmount uint64                 `json:"spendable_amount"`
-	LockedAmount    []LockedOnchainBalance `json:"locked_amount,omitempty"`
+	SpendableAmount uint64 `json:"spendable_amount"`
+	// SpendableRedeemAmount is the portion of SpendableAmount contributed
+	// by matured unilateral-exit redemption UTXOs — i.e. exactly the funds
+	// CompleteUnroll can sweep. It excludes ordinary onchain funds (e.g. an
+	// anchor-fee reserve) and boarding UTXOs, so callers can tell "the exit
+	// is ready to sweep" apart from "the wallet merely holds some spendable
+	// onchain balance".
+	SpendableRedeemAmount uint64                 `json:"spendable_redeem_amount"`
+	LockedAmount          []LockedOnchainBalance `json:"locked_amount,omitempty"`
 }
 
 type LockedOnchainBalance struct {
