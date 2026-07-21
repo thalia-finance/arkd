@@ -18,10 +18,10 @@ import (
 	"github.com/arkade-os/arkd/pkg/ark-lib/arkfee"
 	"github.com/arkade-os/arkd/pkg/client-lib/client"
 	"github.com/arkade-os/arkd/pkg/client-lib/types"
+	"github.com/btcsuite/btcd/address/v2"
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/btcsuite/btcd/btcutil"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcd/chaincfg/v2"
+	"github.com/btcsuite/btcd/txscript/v2"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -206,7 +206,7 @@ func CoinSelectAsset(
 func ParseBitcoinAddress(addr string, net chaincfg.Params) (
 	bool, []byte, error,
 ) {
-	btcAddr, err := btcutil.DecodeAddress(addr, &net)
+	btcAddr, err := address.DecodeAddress(addr, &net)
 	if err != nil {
 		return false, nil, nil
 	}

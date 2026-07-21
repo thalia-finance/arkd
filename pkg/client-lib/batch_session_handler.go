@@ -18,13 +18,13 @@ import (
 	"github.com/arkade-os/arkd/pkg/client-lib/client"
 	"github.com/arkade-os/arkd/pkg/client-lib/internal/utils"
 	"github.com/arkade-os/arkd/pkg/client-lib/types"
+	"github.com/btcsuite/btcd/address/v2"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
-	"github.com/btcsuite/btcd/btcutil"
-	"github.com/btcsuite/btcd/btcutil/psbt"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcd/chainhash/v2"
+	"github.com/btcsuite/btcd/psbt/v2"
+	"github.com/btcsuite/btcd/txscript/v2"
+	"github.com/btcsuite/btcd/wire/v2"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -801,7 +801,7 @@ func (h *defaultBatchEventsHandler) validateVtxoTree(
 func (h *defaultBatchEventsHandler) createAndSignForfeits(
 	ctx context.Context, vtxosToSign []types.VtxoWithTapTree, connectorsLeaves []*psbt.Packet,
 ) ([]string, error) {
-	parsedForfeitAddr, err := btcutil.DecodeAddress(h.ForfeitAddress, nil)
+	parsedForfeitAddr, err := address.DecodeAddress(h.ForfeitAddress, nil)
 	if err != nil {
 		return nil, err
 	}

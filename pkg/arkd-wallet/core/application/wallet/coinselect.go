@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 
 	"github.com/arkade-os/arkd/pkg/arkd-wallet/core/ports"
-	"github.com/btcsuite/btcd/btcutil"
-	"github.com/btcsuite/btcd/btcutil/coinset"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
+	"github.com/btcsuite/btcd/btcutil/v2"
+	"github.com/btcsuite/btcd/btcutil/v2/coinset"
+	"github.com/btcsuite/btcd/chainhash/v2"
 )
 
 const (

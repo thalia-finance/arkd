@@ -18,10 +18,10 @@ import (
 	"github.com/arkade-os/arkd/pkg/ark-lib/tree"
 	"github.com/arkade-os/arkd/pkg/client-lib/internal/utils"
 	"github.com/arkade-os/arkd/pkg/client-lib/types"
-	"github.com/btcsuite/btcd/btcutil"
-	"github.com/btcsuite/btcd/btcutil/psbt"
-	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcd/address/v2"
+	"github.com/btcsuite/btcd/psbt/v2"
+	"github.com/btcsuite/btcd/txscript/v2"
+	"github.com/btcsuite/btcd/wire/v2"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -129,7 +129,7 @@ func (a *service) CollaborativeExit(
 	}
 
 	netParams := utils.ToBitcoinNetwork(a.Network)
-	if _, err := btcutil.DecodeAddress(addr, &netParams); err != nil {
+	if _, err := address.DecodeAddress(addr, &netParams); err != nil {
 		return nil, fmt.Errorf("invalid onchain address")
 	}
 
