@@ -5,8 +5,8 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
-	"github.com/btcsuite/btcd/btcutil/bech32"
-	"github.com/btcsuite/btcd/txscript"
+	"github.com/btcsuite/btcd/address/v2/bech32"
+	"github.com/btcsuite/btcd/txscript/v2"
 )
 
 // Address represents an Ark address with Version, prefix, signer public key, and VTXO taproot key.

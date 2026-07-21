@@ -5,7 +5,7 @@ import (
 
 	arklib "github.com/arkade-os/arkd/pkg/ark-lib"
 	"github.com/arkade-os/arkd/pkg/client-lib/internal/utils"
-	"github.com/btcsuite/btcd/btcutil"
+	"github.com/btcsuite/btcd/address/v2"
 )
 
 // ReceiverOption is the intersection of every option family that accepts a
@@ -89,7 +89,7 @@ func validateOnchainAddress(addr string, network arklib.Network) error {
 		return fmt.Errorf("missing receiver address")
 	}
 	netParams := utils.ToBitcoinNetwork(network)
-	if _, err := btcutil.DecodeAddress(addr, &netParams); err != nil {
+	if _, err := address.DecodeAddress(addr, &netParams); err != nil {
 		return fmt.Errorf("invalid onchain receiver address: %w", err)
 	}
 	return nil
@@ -106,7 +106,7 @@ func validateOffchainOrOnchainAddress(addr string, network arklib.Network) error
 		return nil
 	}
 	netParams := utils.ToBitcoinNetwork(network)
-	if _, onErr := btcutil.DecodeAddress(addr, &netParams); onErr == nil {
+	if _, onErr := address.DecodeAddress(addr, &netParams); onErr == nil {
 		return nil
 	}
 	return fmt.Errorf(

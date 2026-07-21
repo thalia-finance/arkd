@@ -13,7 +13,7 @@ import (
 	arklib "github.com/arkade-os/arkd/pkg/ark-lib"
 	explorer "github.com/arkade-os/arkd/pkg/client-lib/explorer"
 	mempoolexplorer "github.com/arkade-os/arkd/pkg/client-lib/explorer/mempool"
-	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcd/wire/v2"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/require"
 )

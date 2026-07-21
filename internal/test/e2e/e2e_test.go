@@ -30,13 +30,13 @@ import (
 	"github.com/arkade-os/arkd/pkg/client-lib/indexer"
 	"github.com/arkade-os/arkd/pkg/client-lib/redemption"
 	"github.com/arkade-os/arkd/pkg/client-lib/types"
+	"github.com/btcsuite/btcd/address/v2"
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr"
-	"github.com/btcsuite/btcd/btcutil"
-	"github.com/btcsuite/btcd/btcutil/psbt"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcd/wire"
+	"github.com/btcsuite/btcd/chainhash/v2"
+	"github.com/btcsuite/btcd/psbt/v2"
+	"github.com/btcsuite/btcd/txscript/v2"
+	"github.com/btcsuite/btcd/wire/v2"
 	"github.com/btcsuite/btcwallet/waddrmgr"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -2208,7 +2208,7 @@ func TestDelegateRefresh(t *testing.T) {
 	require.NoError(t, err)
 
 	// Alice creates a forfeit transaction spending the vtxo with SIGHASH_ALL | ANYONECANPAY
-	forfeitOutputAddr, err := btcutil.DecodeAddress(aliceConfig.ForfeitAddress, nil)
+	forfeitOutputAddr, err := address.DecodeAddress(aliceConfig.ForfeitAddress, nil)
 	require.NoError(t, err)
 
 	forfeitOutputScript, err := txscript.PayToAddrScript(forfeitOutputAddr)
@@ -4763,7 +4763,7 @@ func TestBan(t *testing.T) {
 				// use a wrong script to create invalid signatures
 				fakeScript := []byte("random_script")
 
-				forfeitOutputAddr, err := btcutil.DecodeAddress(info.ForfeitAddress, nil)
+				forfeitOutputAddr, err := address.DecodeAddress(info.ForfeitAddress, nil)
 				if err != nil {
 					return nil, err
 				}
