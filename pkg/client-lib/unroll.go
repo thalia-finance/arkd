@@ -113,18 +113,23 @@ func (a *service) Unroll(ctx context.Context, opts ...UnrollOption) ([]UnrollRes
 	for _, parent := range transactions {
 		var parentTx wire.MsgTx
 		if err := parentTx.Deserialize(hex.NewDecoder(strings.NewReader(parent))); err != nil {
-			return nil, err
+			// Return the packages already broadcast alongside the error:
+			// this loop broadcasts sequentially, so on a mid-loop failure
+			// earlier packages are already in the mempool. Discarding
+			// them (returning nil) hides live branch txs from the caller,
+			// which then can't track the in-flight unroll.
+			return res, err
 		}
 
 		childTxid, child, err := a.bumpAnchorTx(ctx, &parentTx)
 		if err != nil {
-			return nil, err
+			return res, err
 		}
 
 		// broadcast the package (parent + child)
 		packageResponse, err := a.explorer.Broadcast(parent, child)
 		if err != nil {
-			return nil, err
+			return res, err
 		}
 
 		res = append(res, UnrollRes{
@@ -563,7 +568,27 @@ func (a *service) sendExpiredBoardingUtxos(
 		}
 	}
 
-	return ptx.B64Encode()
+	// Extract the finalized transaction and broadcast it, mirroring
+	// completeUnroll. Returning only the base64 PSBT here (as this
+	// function previously did) meant the expired-boarding sweep was
+	// signed but NEVER broadcast, so both public callers
+	// (WithdrawFromAllExpiredBoardings, OnboardAgainAllExpiredBoardings)
+	// silently left the funds stranded at the boarding script — the
+	// caller has no separate broadcast step and the b64 result is
+	// discarded. Broadcasting here makes the withdrawal actually happen
+	// and returns the resulting txid, matching the method contract.
+	tx, err := psbt.Extract(ptx)
+	if err != nil {
+		return "", err
+	}
+
+	buf := bytes.NewBuffer(nil)
+	if err := tx.Serialize(buf); err != nil {
+		return "", err
+	}
+
+	txHex := hex.EncodeToString(buf.Bytes())
+	return a.explorer.Broadcast(txHex)
 }
 
 func (a *service) getExpiredBoardingUtxos(
