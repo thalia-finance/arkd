@@ -211,6 +211,8 @@ func (a *service) Balance(ctx context.Context) (*Balance, error) {
 			SpendableAmount:       onchainSpendable + boardingSpendable + redeemSpendable,
 			SpendableRedeemAmount: redeemSpendable,
 			LockedAmount:          lockedOnchainBalance,
+			LockedRedeemAmount:    redeemLocked,
+			LockedBoardingAmount:  boardingLocked,
 		},
 		OffchainBalance: OffchainBalance{
 			Total:          offchainBalance,
