@@ -562,11 +562,12 @@ func (a *service) completeUnroll(
 
 	feeAmount := uint64(math.Ceil(float64(vbytes)*feeRate) + 100)
 
-	if targetAmount-feeAmount <= a.Dust {
-		return "", fmt.Errorf("not enough funds to cover network fees")
+	outputValue, err := sweepOutputValue(targetAmount, feeAmount, a.Dust)
+	if err != nil {
+		return "", err
 	}
 
-	updater.Upsbt.UnsignedTx.TxOut[0].Value -= int64(feeAmount)
+	updater.Upsbt.UnsignedTx.TxOut[0].Value = int64(outputValue)
 
 	unsignedTx, _ := ptx.B64Encode()
 
@@ -652,11 +653,12 @@ func (a *service) sendExpiredBoardingUtxos(
 	}
 	feeAmount := uint64(math.Ceil(float64(vbytes)*feeRate) + 50)
 
-	if targetAmount-feeAmount <= a.Dust {
-		return "", fmt.Errorf("not enough funds to cover network fees")
+	outputValue, err := sweepOutputValue(targetAmount, feeAmount, a.Dust)
+	if err != nil {
+		return "", err
 	}
 
-	updater.Upsbt.UnsignedTx.TxOut[0].Value -= int64(feeAmount)
+	updater.Upsbt.UnsignedTx.TxOut[0].Value = int64(outputValue)
 
 	unsignedTx, _ := ptx.B64Encode()
 
@@ -826,6 +828,26 @@ func (a *service) addInputs(
 	}
 
 	return nil
+}
+
+// errSweepUnaffordable is returned when the funds a sweep would move cannot
+// pay the network fee and still leave more than dust.
+var errSweepUnaffordable = fmt.Errorf("not enough funds to cover network fees")
+
+// sweepOutputValue returns what a sweep of targetAmount pays out after
+// feeAmount, refusing when the remainder would be at or below dust.
+//
+// The fee is checked against the amount before it is subtracted. Both are
+// unsigned, so a fee larger than the amount wraps the difference to a huge
+// value that sails past the dust check, and the output then goes negative —
+// the sweep fails later with an opaque build or broadcast error instead of
+// this clear refusal.
+func sweepOutputValue(targetAmount, feeAmount, dust uint64) (uint64, error) {
+	if feeAmount >= targetAmount || targetAmount-feeAmount <= dust {
+		return 0, errSweepUnaffordable
+	}
+
+	return targetAmount - feeAmount, nil
 }
 
 func (a *service) getMatureUtxos(ctx context.Context) ([]types.Utxo, error) {
