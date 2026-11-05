@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -259,7 +260,25 @@ func (w *wallet) sendExpiredBoardingUtxos(ctx context.Context, to string) (strin
 		}
 	}
 
-	return ptx.B64Encode()
+	// Extract the finalized transaction and broadcast it. Returning only
+	// the base64 PSBT here meant the expired-boarding sweep was signed but
+	// NEVER broadcast, so both public callers
+	// (WithdrawFromAllExpiredBoardings, OnboardAgainAllExpiredBoardings)
+	// silently left the funds stranded at the boarding script: the caller
+	// has no separate broadcast step and discards the base64 result.
+	// Broadcasting here makes the withdrawal actually happen and returns
+	// the resulting txid, matching the method contract.
+	tx, err := psbt.Extract(ptx)
+	if err != nil {
+		return "", err
+	}
+
+	buf := bytes.NewBuffer(nil)
+	if err := tx.Serialize(buf); err != nil {
+		return "", err
+	}
+
+	return w.explorer.Broadcast(hex.EncodeToString(buf.Bytes()))
 }
 
 func (w *wallet) getExpiredBoardingUtxos(ctx context.Context) ([]clientlib.Utxo, error) {
