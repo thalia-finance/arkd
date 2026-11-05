@@ -121,18 +121,23 @@ func Unroll(ctx context.Context, args UnrollArgs) ([]UnrollRes, error) {
 	for _, parent := range transactions {
 		var parentTx wire.MsgTx
 		if err := parentTx.Deserialize(hex.NewDecoder(strings.NewReader(parent))); err != nil {
-			return nil, err
+			// Return the packages already broadcast alongside the error:
+			// this loop broadcasts sequentially, so on a mid-loop failure
+			// earlier packages are already in the mempool. Discarding
+			// them (returning nil) hides live branch txs from the caller,
+			// which then can't track the in-flight unroll.
+			return res, err
 		}
 
 		childTxid, child, err := bumpAnchorTx(ctx, args, &parentTx)
 		if err != nil {
-			return nil, err
+			return res, err
 		}
 
 		// broadcast the package (parent + child)
 		packageResponse, err := args.Explorer.Broadcast(parent, child)
 		if err != nil {
-			return nil, err
+			return res, err
 		}
 
 		res = append(res, UnrollRes{
