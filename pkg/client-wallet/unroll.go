@@ -68,6 +68,58 @@ func (w *wallet) Unroll(ctx context.Context, opts ...UnrollOption) ([]UnrollRes,
 	})
 }
 
+// BumpUnroll rebuilds the fee-bumping child of every branch transaction of
+// the wallet's vtxos (or of WithVtxos) still unconfirmed in the mempool, at
+// the current feerate, and rebroadcasts each package. See unroll.BumpUnroll.
+func (w *wallet) BumpUnroll(ctx context.Context, opts ...UnrollOption) ([]UnrollRes, error) {
+	if err := w.safeCheck(); err != nil {
+		return nil, err
+	}
+
+	o := newDefaultUnrollOptions()
+	for _, opt := range opts {
+		if err := opt.applyUnroll(o); err != nil {
+			return nil, err
+		}
+	}
+
+	w.txLock.Lock()
+	defer w.txLock.Unlock()
+
+	vtxos := o.vtxos
+	if len(vtxos) <= 0 {
+		var err error
+		vtxos, err = w.getSpendableVtxos(ctx, nil)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(vtxos) == 0 {
+		return nil, fmt.Errorf("no vtxos to unroll")
+	}
+
+	onchainAddr, _, _, _, err := w.getAddresses(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	keyRef, err := w.identity.GetKey(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	return unroll.BumpUnroll(ctx, unroll.UnrollArgs{
+		Explorer:     w.explorer,
+		Indexer:      w.indexer,
+		SignTx:       w.SignTransaction,
+		ServerParams: *w.ServerParams,
+		Vtxos:        vtxos,
+		BumpAddr:     onchainAddr.Address,
+		BumpPubKey:   keyRef.PubKey,
+	})
+}
+
 func (w *wallet) CompleteUnroll(ctx context.Context, opts ...UnrollOption) (string, error) {
 	if err := w.safeCheck(); err != nil {
 		return "", err

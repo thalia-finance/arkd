@@ -77,6 +77,7 @@ type Wallet interface {
 	) error
 	// ** Unroll **
 	Unroll(ctx context.Context, opts ...UnrollOption) ([]UnrollRes, error)
+	BumpUnroll(ctx context.Context, opts ...UnrollOption) ([]UnrollRes, error)
 	CompleteUnroll(ctx context.Context, opts ...UnrollOption) (string, error)
 	OnboardAgainAllExpiredBoardings(ctx context.Context) (string, error)
 	WithdrawFromAllExpiredBoardings(ctx context.Context, opts ...UnrollOption) (string, error)
