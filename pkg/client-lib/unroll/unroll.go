@@ -207,7 +207,18 @@ func bumpAnchorTx(
 	}
 
 	if amountToSelect > 0 {
-		return "", "", fmt.Errorf("not enough funds to select %d", amountToSelect)
+		// A unilateral exit can't proceed without onchain funds to bump
+		// its tree; distinguish "nothing at all" from "not quite enough"
+		// so the caller (and eventually a fee sponsor) can react.
+		if selectedAmount == 0 {
+			return "", "", fmt.Errorf(
+				"%w: none available", ErrInsufficientOnchainFunds,
+			)
+		}
+		return "", "", fmt.Errorf(
+			"%w: need %d more sat", ErrInsufficientOnchainFunds,
+			amountToSelect,
+		)
 	}
 
 	if fees > selectedAmount {
